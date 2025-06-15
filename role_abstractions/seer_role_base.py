@@ -1,12 +1,14 @@
-from roleBase import RoleBase
+from abc import ABC, abstractmethod
+
+from role_abstractions.role_base import RoleBase
 
 class SeerRoleBase(RoleBase):
     """
     Base class for Seer role.
     """
 
-    def __init__(self, numPlayers: int, name: str = "Seer"):
-        super().__init__(name, numPlayers)
+    def __init__(self, name: str = "Seer"):
+        super().__init__(name)
 
     @abstractmethod
     def choosePlayerToCheck(self):
@@ -16,7 +18,7 @@ class SeerRoleBase(RoleBase):
         raise NotImplementedError("Subclasses must implement this method.")
 
     @abstractmethod
-    def updateRoleClaims(self):
+    def updateRoleClaimsAfterSeen(self):
         """
         Abstract method to define the Seer's strategy to update it's claims based on
         the checked player.

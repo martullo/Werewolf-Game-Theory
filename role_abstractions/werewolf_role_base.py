@@ -1,12 +1,14 @@
-from roleBase import RoleBase
+from abc import ABC, abstractmethod
 
-class werewolfRoleBase(RoleBase):
+from role_abstractions.role_base import RoleBase
+
+class WerewolfRoleBase(RoleBase):
     """
     Base class for werewolf role.
     """
 
-    def __init__(self, numPlayers: int, name: str = "Werewolf"):
-        super().__init__(name, numPlayers)
+    def __init__(self, name: str = "Werewolf"):
+        super().__init__(name)
 
     @abstractmethod
     def chooseVictim(self):

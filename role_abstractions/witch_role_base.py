@@ -1,12 +1,14 @@
-from roleBase import RoleBase
+from abc import ABC, abstractmethod
+
+from role_abstractions.role_base import RoleBase
 
 class WitchRoleBase(RoleBase):
     """
     Base class for Witch role.
     """
 
-    def __init__(self, numPlayers: int, name: str = "Witch"):
-        super().__init__(name, numPlayers)
+    def __init__(self, name: str = "Witch"):
+        super().__init__(name)
 
     @abstractmethod
     def decideSaveOrPoison(self):
