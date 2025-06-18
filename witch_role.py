@@ -23,5 +23,5 @@ class WitchRole(WitchRoleBase):
     def reactToVotes(self, votes, votedOutPlayer):
         pass
 
-    def decideSaveOrPoison(self):
-        pass
+    def decideSaveOrPoison(self, player):
+        return player

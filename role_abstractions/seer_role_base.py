@@ -11,7 +11,7 @@ class SeerRoleBase(RoleBase):
         super().__init__(name)
 
     @abstractmethod
-    def choosePlayerToCheck(self):
+    def choosePlayerToCheck(self) -> "RoleBase":
         """
         Abstract method to define the Seer's strategy to choose a player to check.
         """

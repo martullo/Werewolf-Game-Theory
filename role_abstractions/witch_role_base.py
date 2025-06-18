@@ -11,7 +11,7 @@ class WitchRoleBase(RoleBase):
         super().__init__(name)
 
     @abstractmethod
-    def decideSaveOrPoison(self):
+    def decideSaveOrPoison(self) -> "RoleBase":
         """
         Abstract method to define the Witch's strategy to decide to save the player
         or poison another.

@@ -8,7 +8,7 @@ class SeerRole(SeerRoleBase):
     def __init__(self):
         super().__init__()
 
-    def reactToDeath(self, player):
+    def reactToDeath(self, player: int):
         pass
     
     def claimRoles(self):
@@ -20,11 +20,11 @@ class SeerRole(SeerRoleBase):
     def vote(self):
         pass
     
-    def reactToVotes(self, votes, votedOutPlayer):
+    def reactToVotes(self, votes, votedOutPlayer: int):
         pass
 
     def choosePlayerToCheck(self):
-        pass
+        return 1
 
-    def updateRoleClaimsAfterSeen(self):
+    def updateRoleClaimsAfterSeen(self, player: int, role: str):
         pass

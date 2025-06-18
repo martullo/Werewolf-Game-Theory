@@ -23,5 +23,5 @@ class WerewolfRole(WerewolfRoleBase):
     def reactToVotes(self, votes, votedOutPlayer):
         pass
 
-    def chooseVictim(self):
-        pass
+    def chooseVictim(self) -> int:
+        return 1

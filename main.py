@@ -7,6 +7,8 @@ from werewolf_role import WerewolfRole
 from seer_role import SeerRole
 from witch_role import WitchRole
 
+from claim import Claim as PlayerClaim
+
 gameRunning = True
 players = []
 
@@ -34,25 +36,49 @@ def game():
         WitchRole()
     ])
 
+    for player in players:
+        player.players = map(lambda x : x.id, players)
+
     while gameRunning:
+        input("Press Enter to start the next round...")
         # --- Night Phase
         print("Night Phase")
 
         # Werewolfs choose victim
-        victim = werewolfVictimSyndicate()
+        victim = getPlayerById(werewolfVictimSyndicate())
+
         print(f"Werewolves chose victim: {victim}")
 
-        # Seer(s) choose player to check
-        # Seer(s) update claims
+        # Seer(s) check a player
+        for player in players:
+            if isinstance(player, SeerRole):
+                checkPlayer = getPlayerById(player.choosePlayerToCheck())
+                print(f"Seer chose to check: {checkPlayer}")
+                player.updateRoleClaimsAfterSeen(checkPlayer.id, checkPlayer.name)
 
-        # Witch sees killed player and chooses to save them or poison another player
+        # Witch(es) sees killed player and chooses to save them or poison another player
+        poisonedPlayers = []
+        for player in players:
+            if isinstance(player, WitchRole):
+                poisonedPlayers.append(getPlayerById(player.decideSaveOrPoison(victim.id)))
+        for player in poisonedPlayers:
+            if player is victim:
+                print(f"{player} was saved by Witch!")
+                victim = None
+                poisonedPlayers.remove(player)
+            else:
+                print(f"{player} was poisoned by Witch!")
+
 
         # --- Day Phase
         print("Day Phase")
 
         # Game reveals who died during the night
         for player in players:
-            player.reactToDeath(victim)
+            if victim is not None:
+                player.reactToDeath(victim.id)
+            for poisonedPlayer in poisonedPlayers:
+                player.reactToDeath(poisonedPlayer.id)
 
         # --- --- Discussion Phase
         print("§ Discussion §")
@@ -60,8 +86,8 @@ def game():
         # Players (including killed) make claims about all roles
         claims = {}
         for player in players:
-            claims[player] = player.claimRoles()  # Each player claims roles
-            print(f"{player} claims: {claims[player]}")
+            claims[player.id] = player.claimRoles()  # Each player claims roles
+            print(f"{player} claims: {claims[player.id]}")
         
         for player in players:
             player.reactToClaims(claims)  # Each player reacts to claims
@@ -74,7 +100,7 @@ def game():
             vote = player.vote()  # Each player votes
             print(f"{player} votes for: {vote}")
             if vote not in votes:
-                votes[vote] = 0
+                votes[vote] = 1
             votes[vote] += 1
 
         for player in players:
@@ -87,9 +113,8 @@ def game():
         else:
             print(f"Voted out player: {votedOutPlayer}")
 
-
         # Voted out player gets to claim all players role
-        if not isinstance(votedOutPlayer, RoleBase) and not votedOutPlayer is None:
+        if not isinstance(votedOutPlayer, RoleBase) and not votedOutPlayer == 'skip':
             votedOutPlayerClaim = {
                 votedOutPlayer: votedOutPlayer.claimRoles()
             }
@@ -97,9 +122,19 @@ def game():
             for player in players:
                 player.reactToClaim(votedOutPlayer, votedOutPlayerClaim)
 
-        players.remove(victim)  # Remove victim from the game
+        # Remove killed, poisoned, and voted out players from the game
+        for player in poisonedPlayers:
+            if player is not victim:
+                players.remove(player)  # Remove poisoned player from the game
+            else:
+                victim = None
+        if victim is not None:
+            players.remove(victim)  # Remove victim from the game
         if votedOutPlayer != 'skip':
-            players.remove(votedOutPlayer)  # Remove voted out player from the game
+            try:
+                players.remove(votedOutPlayer)  # Remove voted out player from the game
+            except ValueError:
+                pass
 
         # Check if the game is over
         checkGameOver()
@@ -111,6 +146,12 @@ def werewolfVictimSyndicate():
             potVictims.append(player.chooseVictim())
     
     return random.choice(potVictims)
+
+
+def getPlayerById(playerId):
+    for player in players:
+        if player.id == playerId:
+            return player
 
 def checkGameOver():
     global gameRunning

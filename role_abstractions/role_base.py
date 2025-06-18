@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Union
 
+
 class RoleBase(ABC):
     """
     Base class for all roles. Used to define each role's strategy.
@@ -15,6 +16,9 @@ class RoleBase(ABC):
     def __str__(self):
         return f"{self.name} with id {self.id}"
 
+    def __repr__(self):
+        return self.__str__()
+
     def __hash__(self):
         return self.id
         
@@ -24,14 +28,14 @@ class RoleBase(ABC):
         return self.id == other.id
 
     @abstractmethod
-    def reactToDeath(self, player: "RoleBase") -> None:
+    def reactToDeath(self, player: int) -> None:
         """
         Abstract method to define how the role reacts to a player's death.
         """
         raise NotImplementedError("Subclasses must implement this method.")
 
     @abstractmethod
-    def claimRoles(self) -> dict:
+    def claimRoles(self):
         """
         Abstract method to define how the role makes claims about all roles in
         discussion.
@@ -53,7 +57,7 @@ class RoleBase(ABC):
         raise NotImplementedError("Subclasses must implement this method.")
 
     @abstractmethod
-    def reactToVotes(self, votes: dict, votedOutPlayer: Union["RoleBase", str]) -> None:
+    def reactToVotes(self, votes: dict, votedOutPlayer: Union[int, str]) -> None:
         """
         Abstract method to define how the role reacts to another player's vote.
         """
