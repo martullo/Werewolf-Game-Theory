@@ -1,27 +1,35 @@
+import random
+
 from role_abstractions.werewolf_role_base import WerewolfRoleBase
+
+from claim import Claim
 
 class WerewolfRole(WerewolfRoleBase):
     """
-    Werewolf role implementation.
+    Random werewolf role implementation.
     """
 
     def __init__(self):
         super().__init__()
+        self.players = None # This will be set by the game manager after every round
 
     def reactToDeath(self, player):
         pass
     
     def claimRoles(self):
-        pass
+        claim = Claim(self.players)
+        for player in self.players:
+            claim.make_claim(player, random.choice(['villager', 'werewolf', 'seer', 'witch']))
+        return claim
     
     def reactToClaims(self, claims):
         pass
 
     def vote(self):
-        pass
+        return random.choice(self.players + ['skip'])
     
     def reactToVotes(self, votes, votedOutPlayer):
         pass
 
     def chooseVictim(self) -> int:
-        return 1
+        return random.choice(self.players)

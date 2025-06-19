@@ -37,23 +37,27 @@ def game():
     ])
 
     for player in players:
-        player.players = map(lambda x : x.id, players)
+        player.players = list(map(lambda x : x.id, players))
 
     while gameRunning:
+
+        for player in players:
+            player.players = list(map(lambda x : x.id, players))
+
         input("Press Enter to start the next round...")
         # --- Night Phase
-        print("Night Phase")
+        print("NIGHT PHASE")
 
         # Werewolfs choose victim
         victim = getPlayerById(werewolfVictimSyndicate())
 
-        print(f"Werewolves chose victim: {victim}")
+        print(f"-> Werewolves chose victim: {victim}")
 
         # Seer(s) check a player
         for player in players:
             if isinstance(player, SeerRole):
                 checkPlayer = getPlayerById(player.choosePlayerToCheck())
-                print(f"Seer chose to check: {checkPlayer}")
+                print(f"-> Seer chose to check: {checkPlayer}")
                 player.updateRoleClaimsAfterSeen(checkPlayer.id, checkPlayer.name)
 
         # Witch(es) sees killed player and chooses to save them or poison another player
@@ -63,15 +67,15 @@ def game():
                 poisonedPlayers.append(getPlayerById(player.decideSaveOrPoison(victim.id)))
         for player in poisonedPlayers:
             if player is victim:
-                print(f"{player} was saved by Witch!")
+                print(f"-> {player} was saved by Witch!")
                 victim = None
                 poisonedPlayers.remove(player)
             else:
-                print(f"{player} was poisoned by Witch!")
+                print(f"-> {player} was poisoned by Witch!")
 
 
         # --- Day Phase
-        print("Day Phase")
+        print("DAY PHASE")
 
         # Game reveals who died during the night
         for player in players:
@@ -87,7 +91,7 @@ def game():
         claims = {}
         for player in players:
             claims[player.id] = player.claimRoles()  # Each player claims roles
-            print(f"{player} claims: {claims[player.id]}")
+            print(f"-> {player} claims: {claims[player.id]}")
         
         for player in players:
             player.reactToClaims(claims)  # Each player reacts to claims
@@ -98,7 +102,7 @@ def game():
         votes = {'skip': 0}
         for player in players:
             vote = player.vote()  # Each player votes
-            print(f"{player} votes for: {vote}")
+            print(f"-> {player} votes for: {vote}")
             if vote not in votes:
                 votes[vote] = 1
             votes[vote] += 1
@@ -107,20 +111,21 @@ def game():
             player.reactToVotes(votes, 'skip')
 
         # Voted out player is announced
-        votedOutPlayer = max(votes, key=votes.get)  # Player with most votes
+        votedOutPlayer = getPlayerById(max(votes, key=votes.get))  # Player with most votes
         if list(votes.values()).count(max(votes.values())) > 1 or votedOutPlayer == 'skip':
-            print("Tie or skip, no player voted out.")
+            print("-> Tie or skip, no player voted out.")
+            votedOutPlayer = 'skip'
         else:
-            print(f"Voted out player: {votedOutPlayer}")
+            print(f"-> Voted out player: {votedOutPlayer}")
 
         # Voted out player gets to claim all players role
-        if not isinstance(votedOutPlayer, RoleBase) and not votedOutPlayer == 'skip':
+        if isinstance(votedOutPlayer, RoleBase) and not votedOutPlayer == 'skip':
             votedOutPlayerClaim = {
                 votedOutPlayer: votedOutPlayer.claimRoles()
             }
-            print(f"{votedOutPlayer} claims: {votedOutPlayerClaim}")
+            print(f"-> {votedOutPlayer} claims: {votedOutPlayerClaim}")
             for player in players:
-                player.reactToClaim(votedOutPlayer, votedOutPlayerClaim)
+                player.reactToClaims(votedOutPlayerClaim)
 
         # Remove killed, poisoned, and voted out players from the game
         for player in poisonedPlayers:
@@ -161,10 +166,10 @@ def checkGameOver():
     numSeers = sum(1 for player in players if isinstance(player, SeerRole))
 
     if (numSeers + numWitches + numVillagers <= numWerewolves):
-        print("Werewolves win!")
+        print("WEREWOLFS WIN!")
         gameRunning = False
     elif numWerewolves == 0:
-        print("Villagers win!")
+        print("VILLAGERS WIN!")
         gameRunning = False
 
 if __name__ == "__main__":

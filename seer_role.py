@@ -1,30 +1,38 @@
+import random
+
 from role_abstractions.seer_role_base import SeerRoleBase
+
+from claim import Claim
 
 class SeerRole(SeerRoleBase):
     """
-    Seer role implementation.
+    Random seer role implementation.
     """
 
     def __init__(self):
         super().__init__()
+        self.players = None # This will be set by the game manager after every round
 
     def reactToDeath(self, player: int):
         pass
     
     def claimRoles(self):
-        pass
+        claim = Claim(self.players)
+        for player in self.players:
+            claim.make_claim(player, random.choice(['villager', 'werewolf', 'seer', 'witch']))
+        return claim
     
     def reactToClaims(self, claims):
         pass
 
     def vote(self):
-        pass
+        return random.choice(self.players + ['skip'])
     
     def reactToVotes(self, votes, votedOutPlayer: int):
         pass
 
     def choosePlayerToCheck(self):
-        return 1
+        return random.choice(self.players)
 
     def updateRoleClaimsAfterSeen(self, player: int, role: str):
         pass

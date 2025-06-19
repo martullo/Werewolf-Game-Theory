@@ -8,6 +8,9 @@ class Claim():
 
     def __str__(self):
         return f"{self.claims}"
+    
+    def __repr__(self):
+        return self.__str__()
 
     def make_claim(self, player: int, claimed_role: str):
         """
