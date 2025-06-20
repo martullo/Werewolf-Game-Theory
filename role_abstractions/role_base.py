@@ -12,9 +12,10 @@ class RoleBase(ABC):
         self.name = name
         self.id = RoleBase._counter
         RoleBase._counter += 1
+        self.strategy = None
 
     def __str__(self):
-        return f"{self.name} with id {self.id}"
+        return f"{self.name} (id {self.id})"
 
     def __repr__(self):
         return self.__str__()

@@ -3,6 +3,7 @@ import random
 from role_abstractions.werewolf_role_base import WerewolfRoleBase
 
 from claim import Claim
+import werewolf_strategy
 
 class WerewolfRole(WerewolfRoleBase):
     """
@@ -12,14 +13,16 @@ class WerewolfRole(WerewolfRoleBase):
     def __init__(self):
         super().__init__()
         self.players = None # This will be set by the game manager after every round
+        self.strategy = werewolf_strategy.RandomStrategyNoFriendlyFire() 
+        
+        self.werewolves = []
 
     def reactToDeath(self, player):
         pass
     
     def claimRoles(self):
         claim = Claim(self.players)
-        for player in self.players:
-            claim.make_claim(player, random.choice(['villager', 'werewolf', 'seer', 'witch']))
+        claim = self.strategy.claimRoles(self.id, claim, self.players)
         return claim
     
     def reactToClaims(self, claims):
@@ -32,4 +35,4 @@ class WerewolfRole(WerewolfRoleBase):
         pass
 
     def chooseVictim(self) -> int:
-        return random.choice(self.players)
+        return self.strategy.chooseVictim(self.werewolves, self.players)

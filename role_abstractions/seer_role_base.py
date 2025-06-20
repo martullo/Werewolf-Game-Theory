@@ -9,6 +9,7 @@ class SeerRoleBase(RoleBase):
 
     def __init__(self, name: str = "Seer"):
         super().__init__(name)
+       
 
     @abstractmethod
     def choosePlayerToCheck(self) -> "RoleBase":

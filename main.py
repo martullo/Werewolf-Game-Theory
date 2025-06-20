@@ -1,5 +1,7 @@
 import random
-
+import logging
+import os
+import tqdm
 from role_abstractions.role_base import RoleBase
 
 from villager_role import VillagerRole
@@ -9,139 +11,168 @@ from witch_role import WitchRole
 
 from claim import Claim as PlayerClaim
 
+# === Setup dynamic logging ===
+""" just comment it in to enable logging, make sure to specify a valid path
+log_index = 1
+while os.path.exists(f"log{log_index}.log"):
+    log_index += 1
+
+log_filename = f"log{log_index}.log"
+logging.basicConfig(
+    filename=log_filename,
+    filemode='w',
+    level=logging.DEBUG,
+    format='[%(asctime)s] %(levelname)s - %(message)s',
+    datefmt='%H:%M:%S'
+)
+"""
+#print(f"Logging to file: {log_filename}")
 gameRunning = True
 players = []
 
-# Notes:
-# - We decided on an initial day phase. What exactly does it entail? Just a
-#   discussion but no voting?
 def game():
     global gameRunning
     players.clear()
-    players.extend([
-        # 6 Villagers
-        VillagerRole(),
-        VillagerRole(),
-        VillagerRole(),
-        VillagerRole(),
-        VillagerRole(),
-        VillagerRole(),
-        # 3 Werewolves
-        WerewolfRole(),
-        WerewolfRole(),
-        WerewolfRole(),
-        # 1 Seer
-        SeerRole(),
-        # 1 Witch
-        WitchRole()
-    ])
+    num_villagers = 144
+    num_werewolves = 6
+    num_seers = 0
+    num_witches = 0
+
+    for _ in range(num_villagers):
+        players.append(VillagerRole())
+    for _ in range(num_werewolves):
+        players.append(WerewolfRole())
+    for _ in range(num_seers):
+        players.append(SeerRole("basic"))
+    for _ in range(num_witches):
+        players.append(WitchRole())
 
     for player in players:
-        player.players = list(map(lambda x : x.id, players))
+        player.players = list(map(lambda x: x.id, players))
 
+    logging.info("=== Player Roles ===")
+    for player in players:
+        #print(f"{player} -> {player.name}")
+        logging.info(f"{player} -> {player.name}")
+    werewolves = []
+    for player in players:
+        if isinstance(player, WerewolfRole):
+            werewolves.append(player)
+    for werewolf in werewolves:
+        werewolf.werewolves = list(map(lambda x: x.id, werewolves))
     while gameRunning:
-
+        #print(players)
         for player in players:
-            player.players = list(map(lambda x : x.id, players))
+            player.players = list(map(lambda x: x.id, players))
 
-        input("Press Enter to start the next round...")
-        # --- Night Phase
-        print("NIGHT PHASE")
+        #input("Press Enter to start the next round...")
 
-        # Werewolfs choose victim
+        # --- Night Phase ---
+        #print("NIGHT PHASE")
         victim = getPlayerById(werewolfVictimSyndicate())
+        #print(f"-> Werewolves chose victim: {victim}")
+        logging.info("=========NIGHT VICTIM=========")
+        logging.info(f"Werewolves chose victim: {victim}")
+        logging.info("===================")
 
-        print(f"-> Werewolves chose victim: {victim}")
-
-        # Seer(s) check a player
         for player in players:
             if isinstance(player, SeerRole):
                 checkPlayer = getPlayerById(player.choosePlayerToCheck())
-                print(f"-> Seer chose to check: {checkPlayer}")
+                #print(f"-> Seer chose to check: {checkPlayer}")
+                logging.info(f"Seer checked: {checkPlayer}")
                 player.updateRoleClaimsAfterSeen(checkPlayer.id, checkPlayer.name)
 
-        # Witch(es) sees killed player and chooses to save them or poison another player
         poisonedPlayers = []
         for player in players:
             if isinstance(player, WitchRole):
                 poisonedPlayers.append(getPlayerById(player.decideSaveOrPoison(victim.id)))
-        for player in poisonedPlayers:
-            if player is victim:
-                print(f"-> {player} was saved by Witch!")
-                victim = None
-                poisonedPlayers.remove(player)
-            else:
-                print(f"-> {player} was poisoned by Witch!")
 
+      
+        
 
-        # --- Day Phase
-        print("DAY PHASE")
+        # --- Day Phase ---
+        #print("DAY PHASE")
 
-        # Game reveals who died during the night
+        if victim is not None:
+            players.remove(victim)
         for player in players:
             if victim is not None:
                 player.reactToDeath(victim.id)
+                player.players.remove(victim.id)
             for poisonedPlayer in poisonedPlayers:
                 player.reactToDeath(poisonedPlayer.id)
 
-        # --- --- Discussion Phase
-        print("§ Discussion §")
+        checkGameOver()
+        if not gameRunning:
+            break
 
-        # Players (including killed) make claims about all roles
+        #print("§ Discussion §")
         claims = {}
         for player in players:
-            claims[player.id] = player.claimRoles()  # Each player claims roles
-            print(f"-> {player} claims: {claims[player.id]}")
-        
+            claims[player.id] = player.claimRoles()
+            #print(f"-> {player} claims: {claims[player.id]}")
         for player in players:
-            player.reactToClaims(claims)  # Each player reacts to claims
+            player.reactToClaims(claims)
 
-        # --- --- Voting Phase
-        print("§ Voting §")
-        # Alive players vote to kill player or skip (tie is skip)
+        #print("§ Voting §")
         votes = {'skip': 0}
         for player in players:
-            vote = player.vote()  # Each player votes
-            print(f"-> {player} votes for: {vote}")
+            vote = player.vote()
+            #print(f"-> {player} votes for: {vote}")
             if vote not in votes:
                 votes[vote] = 1
-            votes[vote] += 1
+            else:
+                votes[vote] += 1
+
 
         for player in players:
             player.reactToVotes(votes, 'skip')
 
-        # Voted out player is announced
-        votedOutPlayer = getPlayerById(max(votes, key=votes.get))  # Player with most votes
-        if list(votes.values()).count(max(votes.values())) > 1 or votedOutPlayer == 'skip':
-            print("-> Tie or skip, no player voted out.")
-            votedOutPlayer = 'skip'
+        voted_out_id = max(votes, key=votes.get)
+        votedOutPlayer = 'skip' if voted_out_id == 'skip' else getPlayerById(voted_out_id)
+        candidates = [player for player in players if votes.get(player.id, 0) == max(votes.values())]
+        
+        if list(votes.values()).count(max(votes.values())) > 1:
+            #print(f"-> Tie between {candidates}, no player voted out.")
+            logging.info(f"Votes: {votes}")
+            logging.info(f"-> Tie between {candidates}, no player voted out.")
+            logging.info("===================")
+            if 'skip' in candidates:
+                candidates.remove('skip')
+            votedOutPlayer = random.choice(candidates)
+            victim = votedOutPlayer  # None
+            logging.info(f"-> {votedOutPlayer} voted out.")
+        elif votedOutPlayer == 'skip':
+            #print("-> No player voted out, skipping.")
+            logging.info("No player voted out (skip).")
+            logging.info("===================")
+            victim = None
         else:
-            print(f"-> Voted out player: {votedOutPlayer}")
+            #print(f"-> Player voted out during the day: {votedOutPlayer}")
+            logging.info(f"Player voted out: {votedOutPlayer}")
+            logging.info("===================")
+            victim = votedOutPlayer
 
-        # Voted out player gets to claim all players role
-        if isinstance(votedOutPlayer, RoleBase) and not votedOutPlayer == 'skip':
+        if isinstance(votedOutPlayer, RoleBase) and votedOutPlayer != 'skip':
             votedOutPlayerClaim = {
                 votedOutPlayer: votedOutPlayer.claimRoles()
             }
-            print(f"-> {votedOutPlayer} claims: {votedOutPlayerClaim}")
+            #print(f"Last Words -> {votedOutPlayer} claims: {votedOutPlayerClaim}")
             for player in players:
                 player.reactToClaims(votedOutPlayerClaim)
 
-        # Remove killed, poisoned, and voted out players from the game
-        for player in poisonedPlayers:
-            if player is not victim:
-                players.remove(player)  # Remove poisoned player from the game
-            else:
-                victim = None
         if victim is not None:
-            players.remove(victim)  # Remove victim from the game
-        if votedOutPlayer != 'skip':
             try:
-                players.remove(votedOutPlayer)  # Remove voted out player from the game
+                players.remove(victim)
             except ValueError:
                 pass
 
-        # Check if the game is over
+        if votedOutPlayer != 'skip':
+            try:
+                players.remove(votedOutPlayer)
+            except ValueError:
+                pass
+
         checkGameOver()
 
 def werewolfVictimSyndicate():
@@ -149,9 +180,7 @@ def werewolfVictimSyndicate():
     for player in players:
         if isinstance(player, WerewolfRole):
             potVictims.append(player.chooseVictim())
-    
     return random.choice(potVictims)
-
 
 def getPlayerById(playerId):
     for player in players:
@@ -160,17 +189,49 @@ def getPlayerById(playerId):
 
 def checkGameOver():
     global gameRunning
+    global winner
     numVillagers = sum(1 for player in players if isinstance(player, VillagerRole))
     numWerewolves = sum(1 for player in players if isinstance(player, WerewolfRole))
     numWitches = sum(1 for player in players if isinstance(player, WitchRole))
     numSeers = sum(1 for player in players if isinstance(player, SeerRole))
 
     if (numSeers + numWitches + numVillagers <= numWerewolves):
-        print("WEREWOLFS WIN!")
+        #print("WEREWOLFS WIN!")
+        logging.info("Game Over: Werewolves win")
+        logRemainingPlayers()
         gameRunning = False
+        winner = "Werewolves"
     elif numWerewolves == 0:
-        print("VILLAGERS WIN!")
+        #print("VILLAGERS WIN!")
+        logging.info("Game Over: Villagers win")
+        logRemainingPlayers()
         gameRunning = False
+        winner = "Villagers"
+
+def logRemainingPlayers():
+    #print("\n=== Game Over ===")
+    #print("Remaining players:")
+    for p in players:
+        #print(f"{p} ({p.name})")
+        logging.info(f"Remaining: {p} ({p.name})")
+    #print("=================")
 
 if __name__ == "__main__":
-    game()
+    w = 0
+    v = 0
+    #use tqdm to show progress bar
+    #print("Starting 100,000 games...")
+    winner = None   
+    gameRunning = True
+    #print("Press Ctrl+C to stop the simulation at any time.")
+    i = 100
+    for _ in tqdm.tqdm(range(i)):
+        game()
+        if winner == "Werewolves":
+            w += 1
+        elif winner == "Villagers":
+            v += 1
+        winner = None
+        gameRunning = True
+
+    print(f"After {i} games: {w} Werewolves win, {v} Villagers win.")

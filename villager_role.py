@@ -1,7 +1,7 @@
 import random
 
 from role_abstractions.villager_role_base import VillagerRoleBase
-
+import villager_strategy
 from claim import Claim
 
 class VillagerRole(VillagerRoleBase):
@@ -12,16 +12,15 @@ class VillagerRole(VillagerRoleBase):
     def __init__(self):
         super().__init__()
         self.players = None # This will be set by the game manager after every round
-
+        self.strategy = villager_strategy.RandomStrategy()
     def reactToDeath(self, player):
         pass
     
     def claimRoles(self):
         claim = Claim(self.players)
-        for player in self.players:
-            claim.make_claim(player, random.choice(['villager', 'werewolf', 'seer', 'witch']))
+        claim = self.strategy.claimRoles(self.id, claim, self.players)
         return claim
-    
+
     def reactToClaims(self, claims):
         pass
 

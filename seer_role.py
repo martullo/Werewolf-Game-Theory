@@ -9,13 +9,22 @@ class SeerRole(SeerRoleBase):
     Random seer role implementation.
     """
 
-    def __init__(self):
+    def __init__(self, strategy):
         super().__init__()
         self.players = None # This will be set by the game manager after every round
-
+        self.strategy = self.getStrategyByName(strategy)
+        self.strategies = {}
     def reactToDeath(self, player: int):
         pass
-    
+
+    def getStrategyByName(self,strategy):
+        match strategy:
+            case "basic":
+                return self.strategies.get("basic",None)
+            case _:
+                return self.strategies.get("basic",None)
+            
+            
     def claimRoles(self):
         claim = Claim(self.players)
         for player in self.players:
