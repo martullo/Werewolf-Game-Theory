@@ -7,8 +7,8 @@ class WerewolfRoleBase(RoleBase):
     Base class for werewolf role.
     """
 
-    def __init__(self, name: str = "Werewolf"):
-        super().__init__(name)
+    def __init__(self, roles: dict, name: str = "werewolf"):
+        super().__init__(roles,name)
 
     @abstractmethod
     def chooseVictim(self):

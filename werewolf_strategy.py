@@ -9,6 +9,7 @@ class RandomStrategy(Strategy):
 
     def __init__(self):
         super().__init__("random")
+        self.role = 'werewolf'
 
     def reactToDeath(self, player):
         pass
@@ -19,12 +20,15 @@ class RandomStrategy(Strategy):
     def vote(self):
         return None  
 
-    def claimRoles(self, id, claim, players):
+    def claimRoles(self, id, claim, players,is_revealed=False):
         for player in players:
             if player == id:
-                claim.make_claim(player,'villager')
+                if is_revealed:
+                    claim.make_claim(player,self.role)
+                else:
+                    claim.make_claim(player,'villager')
             else:
-                claim.make_claim(player, random.choice(['villager', 'werewolf', 'seer', 'witch']))
+                claim.make_claim(player, random.choice(['villager']))
         return claim
 
     def chooseVictim(self, werewolves, players):
@@ -39,6 +43,7 @@ class RandomStrategyNoFriendlyFire(Strategy):
 
     def __init__(self):
         super().__init__("random")
+        self.role = 'werewolf'
 
     def reactToDeath(self, player):
         pass
@@ -49,12 +54,16 @@ class RandomStrategyNoFriendlyFire(Strategy):
     def vote(self):
         return None  
 
-    def claimRoles(self, id, claim, players):
+    def claimRoles(self, id, claim, players, is_revealed=False):
         for player in players:
-            if id == id:
-                claim.make_claim(player,'villager')
+
+            if player == id:
+                if is_revealed:
+                    claim.make_claim(player,self.role)
+                else:
+                    claim.make_claim(player,'villager')
             else:
-                claim.make_claim(player, random.choice(['villager', 'werewolf', 'seer', 'witch']))
+                claim.make_claim(player, random.choice(['villager']))
         return claim
     
     def chooseVictim(self, werewolves, players):

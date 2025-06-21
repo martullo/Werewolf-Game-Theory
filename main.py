@@ -12,12 +12,12 @@ from witch_role import WitchRole
 from claim import Claim as PlayerClaim
 
 # === Setup dynamic logging ===
-""" just comment it in to enable logging, make sure to specify a valid path
+#just comment it in to enable logging, make sure to specify a valid path
 log_index = 1
 while os.path.exists(f"log{log_index}.log"):
     log_index += 1
 
-log_filename = f"log{log_index}.log"
+log_filename = f"log.log"
 logging.basicConfig(
     filename=log_filename,
     filemode='w',
@@ -25,7 +25,7 @@ logging.basicConfig(
     format='[%(asctime)s] %(levelname)s - %(message)s',
     datefmt='%H:%M:%S'
 )
-"""
+
 #print(f"Logging to file: {log_filename}")
 gameRunning = True
 players = []
@@ -33,19 +33,26 @@ players = []
 def game():
     global gameRunning
     players.clear()
-    num_villagers = 144
-    num_werewolves = 6
-    num_seers = 0
+    num_villagers = 7
+    num_werewolves = 3
+    num_seers = 1
     num_witches = 0
+    roles = dict()
+    roles['villager'] = num_villagers
+    roles['werewolf'] = num_werewolves
+    roles['seer'] = num_seers
+    roles['witch'] = num_witches
+
+    
 
     for _ in range(num_villagers):
-        players.append(VillagerRole())
+        players.append(VillagerRole(roles))
     for _ in range(num_werewolves):
-        players.append(WerewolfRole())
+        players.append(WerewolfRole(roles))
     for _ in range(num_seers):
-        players.append(SeerRole("basic"))
+        players.append(SeerRole(roles))
     for _ in range(num_witches):
-        players.append(WitchRole())
+        players.append(WitchRole(roles))
 
     for player in players:
         player.players = list(map(lambda x: x.id, players))
@@ -54,12 +61,14 @@ def game():
     for player in players:
         #print(f"{player} -> {player.name}")
         logging.info(f"{player} -> {player.name}")
+
     werewolves = []
     for player in players:
         if isinstance(player, WerewolfRole):
             werewolves.append(player)
     for werewolf in werewolves:
         werewolf.werewolves = list(map(lambda x: x.id, werewolves))
+
     while gameRunning:
         #print(players)
         for player in players:
@@ -79,28 +88,38 @@ def game():
             if isinstance(player, SeerRole):
                 checkPlayer = getPlayerById(player.choosePlayerToCheck())
                 #print(f"-> Seer chose to check: {checkPlayer}")
-                logging.info(f"Seer checked: {checkPlayer}")
+                logging.info(f"Seer {player} checked: {checkPlayer}")
                 player.updateRoleClaimsAfterSeen(checkPlayer.id, checkPlayer.name)
-
+        """
         poisonedPlayers = []
         for player in players:
             if isinstance(player, WitchRole):
                 poisonedPlayers.append(getPlayerById(player.decideSaveOrPoison(victim.id)))
+        """
 
       
         
 
         # --- Day Phase ---
         #print("DAY PHASE")
-
+        dead_claims = {}
         if victim is not None:
+            
             players.remove(victim)
+            if isinstance(victim, RoleBase):
+                dead_claims = victim.lastWord().claims
+                logging.info(f"-> Night victim {victim} claims: {dead_claims}")
+            #print(f"Last Words -> {votedOutPlayer} claims: {votedOutPlayerClaim}")
+                
         for player in players:
             if victim is not None:
-                player.reactToDeath(victim.id)
+                if dead_claims:
+                    player.reactToDeath(dead_claims) #we pass claims here, if there is a claim like 10: seer, we know seer died, we update accordingly, this simulates opening up at death and since we reveal the roles after death no additional functionality needed
                 player.players.remove(victim.id)
+            """
             for poisonedPlayer in poisonedPlayers:
                 player.reactToDeath(poisonedPlayer.id)
+            """
 
         checkGameOver()
         if not gameRunning:
@@ -111,6 +130,7 @@ def game():
         for player in players:
             claims[player.id] = player.claimRoles()
             #print(f"-> {player} claims: {claims[player.id]}")
+            logging.info(f"-> {player} claims: {claims[player.id]}")
         for player in players:
             player.reactToClaims(claims)
 
@@ -154,12 +174,11 @@ def game():
             victim = votedOutPlayer
 
         if isinstance(votedOutPlayer, RoleBase) and votedOutPlayer != 'skip':
-            votedOutPlayerClaim = {
-                votedOutPlayer: votedOutPlayer.claimRoles()
-            }
-            #print(f"Last Words -> {votedOutPlayer} claims: {votedOutPlayerClaim}")
+            votedOutPlayerClaim =votedOutPlayer.lastWord().claims
+            
+            logging.info(f"Last Words -> {votedOutPlayer} claims: {votedOutPlayerClaim}")
             for player in players:
-                player.reactToClaims(votedOutPlayerClaim)
+                player.reactToDeath(votedOutPlayerClaim)
 
         if victim is not None:
             try:
@@ -224,7 +243,7 @@ if __name__ == "__main__":
     winner = None   
     gameRunning = True
     #print("Press Ctrl+C to stop the simulation at any time.")
-    i = 100
+    i = 1
     for _ in tqdm.tqdm(range(i)):
         game()
         if winner == "Werewolves":

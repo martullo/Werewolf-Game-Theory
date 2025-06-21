@@ -1,7 +1,7 @@
 import random
 
 from role_abstractions.seer_role_base import SeerRoleBase
-
+import seer_strategy
 from claim import Claim
 
 class SeerRole(SeerRoleBase):
@@ -9,26 +9,29 @@ class SeerRole(SeerRoleBase):
     Random seer role implementation.
     """
 
-    def __init__(self, strategy):
-        super().__init__()
+    def __init__(self,roles):
+
+        super().__init__(roles)
         self.players = None # This will be set by the game manager after every round
-        self.strategy = self.getStrategyByName(strategy)
         self.strategies = {}
+        self.is_revealed = False
+        self.checked_players = dict()
+        self.strategy = seer_strategy.RandomStrategyAdvanced()
     def reactToDeath(self, player: int):
         pass
 
-    def getStrategyByName(self,strategy):
-        match strategy:
-            case "basic":
-                return self.strategies.get("basic",None)
-            case _:
-                return self.strategies.get("basic",None)
+    def lastWord(self):
+        self.is_revealed = True
+        
+        return self.claimRoles()
             
-            
+
+
+        
     def claimRoles(self):
+        
         claim = Claim(self.players)
-        for player in self.players:
-            claim.make_claim(player, random.choice(['villager', 'werewolf', 'seer', 'witch']))
+        claim = self.strategy.claimRoles(self.id, claim, self.players, self.checked_players, self.is_revealed)
         return claim
     
     def reactToClaims(self, claims):
@@ -41,7 +44,11 @@ class SeerRole(SeerRoleBase):
         pass
 
     def choosePlayerToCheck(self):
-        return random.choice(self.players)
+        return self.strategy.choosePlayerToCheck(self.players,self.checked_players,self.id)
 
     def updateRoleClaimsAfterSeen(self, player: int, role: str):
-        pass
+        self.checked_players[player] = role
+
+
+    
+       

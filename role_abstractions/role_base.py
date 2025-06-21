@@ -8,11 +8,12 @@ class RoleBase(ABC):
     """
     _counter = 0
 
-    def __init__(self, name: str):
+    def __init__(self, roles: dict, name: str):
         self.name = name
         self.id = RoleBase._counter
         RoleBase._counter += 1
         self.strategy = None
+        self.belief_table = self.init_belief_table(roles)
 
     def __str__(self):
         return f"{self.name} (id {self.id})"
@@ -27,6 +28,20 @@ class RoleBase(ABC):
         if not isinstance(other, RoleBase):
             return False
         return self.id == other.id
+    
+    def init_belief_table(self,roles):
+        total_players = sum(roles.values())
+        num_werewolf = roles['werewolf']
+        num_villager = roles['villager']
+        num_witch = roles['witch']
+        num_seer = roles['seer']
+        belief_table = dict()
+        probability_ww = float(num_werewolf / total_players)
+        for i in range(total_players):
+            belief_table[i] = probability_ww
+        return belief_table
+
+
 
     @abstractmethod
     def reactToDeath(self, player: int) -> None:

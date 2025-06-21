@@ -7,7 +7,7 @@ class WitchRoleBase(RoleBase):
     Base class for Witch role.
     """
 
-    def __init__(self, name: str = "Witch"):
+    def __init__(self, roles: dict, name: str = "witch"):
         super().__init__(name)
 
     @abstractmethod

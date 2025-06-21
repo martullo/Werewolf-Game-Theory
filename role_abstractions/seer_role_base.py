@@ -7,8 +7,8 @@ class SeerRoleBase(RoleBase):
     Base class for Seer role.
     """
 
-    def __init__(self, name: str = "Seer"):
-        super().__init__(name)
+    def __init__(self, roles: dict,name: str = "seer"):
+        super().__init__(roles,name)
        
 
     @abstractmethod

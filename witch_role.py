@@ -9,7 +9,7 @@ class WitchRole(WitchRoleBase):
     Random witch role implementation.
     """
 
-    def __init__(self):
+    def __init__(self,roles):
         super().__init__()
         self.players = None # This will be set by the game manager after every round
 
