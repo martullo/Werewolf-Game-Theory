@@ -3,7 +3,7 @@
 class Claim():
     def __init__(self, players: list[int]):
         self.players = players
-        self.claims = {player: None for player in players}
+        self.claims = dict()
 
     def __str__(self):
         return f"{self.claims}"

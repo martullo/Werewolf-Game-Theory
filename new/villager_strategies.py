@@ -16,24 +16,27 @@ class RandomStrategy:
         self.role = 'villager'
         self.players = None  # This will be set by the game manager after every round
         self.id = id  # Player ID, to be set by the game manager
-        self.belief_table = None  # Belief table, to be set by the game manager
         self.roles = None  # Roles of players, to be set by the game manager
+        self.claims = None
 
     def reactToDeath(self, player):
         pass
 
     def reactToClaims(self, claims):
-        pass
+        for claim in claims:
+            plainClaim = claim.claims
+            if 'seer' in plainClaim.values() or 'witch' in plainClaim.values():
+                for (player, role) in plainClaim.items():
+                    if role is not None:
+                        self.claims.make_claim(player, role)
+        
+
 
     def vote(self):
         return random.choice(self.players + ['skip'])
     
     def claimRoles(self):
-        claim = Claim(self.players)
-        for player in self.players:
-            existing_roles = [role for role in ['villager', 'werewolf', 'seer', 'witch'] if self.roles[role] > 0]
-            claim.make_claim(player, random.choice(existing_roles))
-        return claim
+        return Claim(self.players)
 
     def lastWord(self):
         return self.claimRoles()

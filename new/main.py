@@ -9,6 +9,8 @@ import werewolf_strategies
 import seer_strategies
 import witch_strategies
 
+from claim import Claim
+
 # === Setup dynamic logging ===
 #just comment it in to enable logging, make sure to specify a valid path
 log_index = 1
@@ -30,13 +32,7 @@ class Game:
         self.werewolves = []
         self.winner = None
 
-    def setup_game(self, n_vil=7, n_wer=3, n_see=0, n_wit=0):
-        roles = dict()
-        roles['villager'] = n_vil
-        roles['werewolf'] = n_wer
-        roles['seer'] = n_see
-        roles['witch'] = n_wit
-
+    def setup_game(self, n_vil=7, n_wer=3, n_see=1, n_wit=1):
         self.players.clear()
         for i in range(n_vil):
             self.players.append(villager_strategies.RandomStrategy(i))
@@ -46,6 +42,9 @@ class Game:
             self.players.append(seer_strategies.RandomStrategy(n_vil + n_wer + i))
         for i in range(n_wit):
             self.players.append(witch_strategies.RandomStrategy(n_vil + n_wer + n_see + i))
+        
+        for player in self.players:
+            player.claims = Claim(list(map(lambda x: x.id, self.players)))
 
         logging.info("=== Player Roles ===")
         for player in self.players:
@@ -80,7 +79,7 @@ class Game:
             if isinstance(player, seer_strategies.RandomStrategy):
                 checkedPlayers.append(player.choosePlayerToCheck())
                 logging.info(f"Seer {player} checked: {checkedPlayers[-1]}")
-                player.updateRoleClaimsAfterSeen(checkedPlayers[-1].id, checkedPlayers[-1].name) #seer updates her claims
+                player.updateRoleClaimsAfterSeen(checkedPlayers[-1], self.getPlayerById(checkedPlayers[-1]).role) #seer updates her claims
         return checkedPlayers
     
     def witch_ability(self, victim):
@@ -94,14 +93,25 @@ class Game:
         return poisonedPlayers
     
     def discussion_phase(self):
-        claims = {}
+        claims = []
         for player in self.players:
             
-            claims[player.id] = player.claimRoles()
-            logging.info(f"-> {player} claims: {claims[player.id]}")
+            claims.append(player.claimRoles())
+            logging.info(f"-> {player} claims: {claims[-1]}")
         for player in self.players:
             player.reactToClaims(claims)
-    
+
+        # For testing of seer/witch mechanism
+        # if len(self.players) == 12:
+        #     testClaimWitch = Claim(self.players)
+        #     testClaimWitch.make_claim(10, "witch")
+        #     testClaimWitch.make_claim(1, "villager")
+        #     testClaimSeer = Claim(self.players)
+        #     testClaimSeer.make_claim(11, "seer")
+        #     testClaimSeer.make_claim(10, "witch")
+        #     for player in self.players:
+        #         player.reactToClaims([Claim(self.players)])
+
     def voting_phase(self):
         votes = {'skip': 0}
         for player in self.players:
@@ -217,10 +227,10 @@ if __name__ == "__main__":
     w = 0
     v = 0
     gameRunning = True
-    i = 100
+    i = 1
     for _ in tqdm.tqdm(range(i)):
         game = Game()
-        game.setup_game(n_vil=120, n_wer=5, n_see=0, n_wit=0)
+        game.setup_game(n_vil=9, n_wer=1, n_see=1, n_wit=1)
         game.play_game()
         if game.winner == "Werewolves":
             w += 1
