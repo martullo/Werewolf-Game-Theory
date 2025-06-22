@@ -243,7 +243,7 @@ if __name__ == "__main__":
     winner = None   
     gameRunning = True
     #print("Press Ctrl+C to stop the simulation at any time.")
-    i = 1
+    i = 10000
     for _ in tqdm.tqdm(range(i)):
         game()
         if winner == "Werewolves":

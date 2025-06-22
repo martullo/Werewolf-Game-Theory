@@ -29,7 +29,7 @@ class RandomStrategy:
 
     def vote(self):
         players = [p for p in self.players if p not in self.werewolves]
-        return random.choice(players + ['skip'])
+        return random.choice(self.players + ['skip'])
 
     # def claimRoles(self, id, claim, players, is_revealed=False):
     #     for player in players:

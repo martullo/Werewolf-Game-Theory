@@ -63,10 +63,8 @@ class Game():
             
         for werewolf in self.werewolves:
             werewolf.werewolves = list(map(lambda x: x.id, self.werewolves))
-            for w in self.werewolves:
-                w.belief_table[w.id] = 1.0
-            print(type(werewolf))
-            print (werewolf.werewolves)
+           
+            
         
 
     def werewolves_choose_victim(self):
@@ -172,12 +170,23 @@ class Game():
             player.players = list(map(lambda x: x.id, self.players))
 
         while self.gameRunning:
+            
+
+            #print("§ Discussion §")
+            self.discussion()
+
+            #print("§ Voting §")
+            self.voting()
+            self.checkGameOver()
+            if not self.gameRunning:
+                break
             victim = self.werewolves_choose_victim()
 
             #seer checks a player
             checkPlayer = self.seer_checks_player()
             
             poisonedPlayers = self.witch_action()
+            
                 
             #a person dies and leaves a last word and everyone updates theie claims (atm only seer influences the claims)
             dead_claims = dict()
@@ -199,15 +208,8 @@ class Game():
             self.checkGameOver()
             if not self.gameRunning:
                 break
-
-            #print("§ Discussion §")
-            self.discussion()
-
-            #print("§ Voting §")
-            self.voting()
             
 
-            self.checkGameOver()
 
     def werewolfVictimSyndicate(self):
         potVictims = []
@@ -254,14 +256,13 @@ if __name__ == "__main__":
     v = 0
     #use tqdm to show progress bar
     #print("Starting 100,000 games...")
-    winner = None   
     gameRunning = True
     #print("Press Ctrl+C to stop the simulation at any time.")
-    i = 2
+    i = 100
     for _ in tqdm.tqdm(range(i)):
         RoleBase._counter = 0
         game = Game()
-        game.setup_game()
+        game.setup_game(num_villagers=120,num_werewolves=5,num_seers=0)
         game.play_game()
         if game.winner == "Werewolves":
             w += 1

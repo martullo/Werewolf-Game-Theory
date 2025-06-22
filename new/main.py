@@ -14,7 +14,7 @@ import witch_strategies
 log_index = 1
 while os.path.exists(f"log{log_index}.log"):
     log_index += 1
-log_filename = f"log.log"
+log_filename = f"logNew.log"
 logging.basicConfig(
     filename=log_filename,
     filemode='w',
@@ -96,6 +96,7 @@ class Game:
     def discussion_phase(self):
         claims = {}
         for player in self.players:
+            
             claims[player.id] = player.claimRoles()
             logging.info(f"-> {player} claims: {claims[player.id]}")
         for player in self.players:
@@ -110,7 +111,7 @@ class Game:
                 votes[vote] = 1
             else:
                 votes[vote] += 1
-        
+        #votes['skip'] = 0
         voted_out_id = max(votes, key=votes.get)
         votedOutPlayer = 'skip' if voted_out_id == 'skip' else self.getPlayerById(voted_out_id)
         candidates = [player for player in self.players if votes.get(player.id, 0) == max(votes.values())]
@@ -140,14 +141,26 @@ class Game:
                 player.reactToDeath(last_words)
 
             self.players.remove(votedOutPlayer)
+            
+            
             for player in self.players:
-                player.players.remove(votedOutPlayer.id)  # Remove victim from other players' views
+                #player.players = list(map(lambda x: x.id, self.players))
+                player.players.remove(votedOutPlayer.id)  # Remove victim from other players' views"""
 
     def play_game(self):
         for player in self.players:
             player.players = list(map(lambda x: x.id, self.players))
 
         while self.gameRunning:
+            
+
+            self.discussion_phase()
+
+            self.voting_phase()
+
+            self.checkGameOver()
+            if not self.gameRunning:
+                break
             victim = self.werewolves_choose_victim()
 
             checkedPlayers = self.seer_checks_player()
@@ -170,12 +183,6 @@ class Game:
             self.checkGameOver()
             if not self.gameRunning:
                 break
-
-            self.discussion_phase()
-
-            self.voting_phase()
-
-            self.checkGameOver()
 
 
     def checkGameOver(self):
@@ -209,12 +216,11 @@ class Game:
 if __name__ == "__main__":
     w = 0
     v = 0
-    winner = None   
     gameRunning = True
-    i = 1000
+    i = 100
     for _ in tqdm.tqdm(range(i)):
         game = Game()
-        game.setup_game(n_vil=5, n_wer=2, n_see=0, n_wit=5)
+        game.setup_game(n_vil=120, n_wer=5, n_see=0, n_wit=0)
         game.play_game()
         if game.winner == "Werewolves":
             w += 1
