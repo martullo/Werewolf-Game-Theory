@@ -14,6 +14,7 @@ from claim import Claim
 # === Setup dynamic logging ===
 #just comment it in to enable logging, make sure to specify a valid path
 log_index = 1
+strategies_printed = False
 while os.path.exists(f"log{log_index}.log"):
     log_index += 1
 log_filename = f"logNew.log"
@@ -33,19 +34,27 @@ class Game:
         self.winner = None
 
     def setup_game(self, n_vil=7, n_wer=3, n_see=1, n_wit=1):
+        global strategies_printed
         self.players.clear()
         for i in range(n_vil):
-            self.players.append(villager_strategies.RandomStrategy(i))
+            self.players.append(villager_strategies.TrustStrategy(i))
         for i in range(n_wer):
-            self.players.append(werewolf_strategies.RandomStrategy(n_vil + i))
+            self.players.append(werewolf_strategies.BeastStrategy(n_vil + i))
         for i in range(n_see):
-            self.players.append(seer_strategies.RandomStrategy(n_vil + n_wer + i))
+            self.players.append(seer_strategies.FirstWerewolfStrategy(n_vil + n_wer + i))
         for i in range(n_wit):
             self.players.append(witch_strategies.RandomStrategy(n_vil + n_wer + n_see + i))
         
         for player in self.players:
             player.claims = Claim(list(map(lambda x: x.id, self.players)))
+        if not strategies_printed:
+            strategies = set()
+            for player in self.players:
+                strategies.add(type(player))
 
+            print("Game initialized with the following stratagies: ", strategies)
+            logging.info(f"Game initialized with the following stratagies: , {strategies}")
+            strategies_printed = True
         logging.info("=== Player Roles ===")
         for player in self.players:
             logging.info(f"{player}")
@@ -53,7 +62,7 @@ class Game:
         #werewolves setup, they keep a list of their teammates, Game keeps it too
         for player in self.players:
             player.roles = {"villager": n_vil, "werewolf": n_wer, "seer": n_see, "witch": n_wit}
-            if isinstance(player, werewolf_strategies.RandomStrategy):
+            if isinstance(player, werewolf_strategies.BeastStrategy):
                 self.werewolves.append(player)
             
         for werewolf in self.werewolves:
@@ -65,7 +74,7 @@ class Game:
     def werewolves_choose_victim(self):
         potVictims = []
         for player in self.players:
-            if isinstance(player, werewolf_strategies.RandomStrategy):
+            if isinstance(player, werewolf_strategies.BeastStrategy):
                 potVictims.append(self.getPlayerById(player.chooseVictim()))
         victim = random.choice(potVictims)
         logging.info("=========NIGHT VICTIM=========")
@@ -76,10 +85,12 @@ class Game:
     def seer_checks_player(self):
         checkedPlayers = []
         for player in self.players:
-            if isinstance(player, seer_strategies.RandomStrategy):
-                checkedPlayers.append(player.choosePlayerToCheck())
-                logging.info(f"Seer {player} checked: {checkedPlayers[-1]}")
-                player.updateRoleClaimsAfterSeen(checkedPlayers[-1], self.getPlayerById(checkedPlayers[-1]).role) #seer updates her claims
+            if isinstance(player, seer_strategies.FirstWerewolfStrategy):
+                to_check = player.choosePlayerToCheck()
+                checkedPlayers.append(to_check)
+                role = self.getPlayerById(to_check).role
+                logging.info(f"Seer {player} checked: {to_check} with {role}")
+                player.updateRoleClaimsAfterSeen(to_check, self.getPlayerById(to_check).role) #seer updates her claims
         return checkedPlayers
     
     def witch_ability(self, victim):
@@ -95,9 +106,9 @@ class Game:
     def discussion_phase(self):
         claims = []
         for player in self.players:
-            
-            claims.append(player.claimRoles())
-            logging.info(f"-> {player} claims: {claims[-1]}")
+            curr_claim = player.claimRoles()
+            claims.append(curr_claim)
+            logging.info(f"-> {player} claims: {curr_claim}")
         for player in self.players:
             player.reactToClaims(claims)
 
@@ -196,10 +207,10 @@ class Game:
 
 
     def checkGameOver(self):
-        numVillagers = sum(1 for player in self.players if isinstance(player, villager_strategies.RandomStrategy))
-        numWerewolves = sum(1 for player in self.players if isinstance(player, werewolf_strategies.RandomStrategy))
+        numVillagers = sum(1 for player in self.players if isinstance(player, villager_strategies.TrustStrategy))
+        numWerewolves = sum(1 for player in self.players if isinstance(player, werewolf_strategies.BeastStrategy))
         numWitches = sum(1 for player in self.players if isinstance(player, witch_strategies.RandomStrategy))
-        numSeers = sum(1 for player in self.players if isinstance(player, seer_strategies.RandomStrategy))
+        numSeers = sum(1 for player in self.players if isinstance(player, seer_strategies.FirstWerewolfStrategy))
 
         if (numSeers + numWitches + numVillagers <= numWerewolves):
             logging.info("Game Over: Werewolves win")
@@ -227,10 +238,10 @@ if __name__ == "__main__":
     w = 0
     v = 0
     gameRunning = True
-    i = 1
+    i = 1000
     for _ in tqdm.tqdm(range(i)):
         game = Game()
-        game.setup_game(n_vil=9, n_wer=1, n_see=1, n_wit=1)
+        game.setup_game(n_vil=13, n_wer=2, n_see=1, n_wit=0)
         game.play_game()
         if game.winner == "Werewolves":
             w += 1

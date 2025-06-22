@@ -4,6 +4,7 @@ class Claim():
     def __init__(self, players: list[int]):
         self.players = players
         self.claims = dict()
+        self.size = 0
 
     def __str__(self):
         return f"{self.claims}"
@@ -21,6 +22,7 @@ class Claim():
             self.claims[player] = claimed_role
         else:
             raise ValueError(f"{player} is not a valid player in this game.")
+        self.size = len(self.claims.keys())
     
     def get_claim(self, player: int) -> str:
         """
@@ -32,3 +34,6 @@ class Claim():
             return self.claims.get(player, None)
         else:
             raise ValueError(f"{player} is not a valid player in this game.")
+        
+    def get_size(self):
+        return self.size

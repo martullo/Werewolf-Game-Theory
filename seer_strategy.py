@@ -46,10 +46,11 @@ class RandomStrategy(Strategy):
 
 
 
-class RandomStrategyAdvanced(Strategy):
+
+class RandomStrategy(Strategy):
     """
     Random strategy implementation.
-    Seer doesn't check herself, doesn't check same player more then once
+    This strategy randomly chooses actions without any specific logic.
     """
 
     def __init__(self):
@@ -90,4 +91,3 @@ class RandomStrategyAdvanced(Strategy):
             if p in to_check:
                 to_check.remove(p) #no double checking
         return random.choice(to_check)
-

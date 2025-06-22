@@ -258,11 +258,11 @@ if __name__ == "__main__":
     #print("Starting 100,000 games...")
     gameRunning = True
     #print("Press Ctrl+C to stop the simulation at any time.")
-    i = 100
+    i = 1
     for _ in tqdm.tqdm(range(i)):
         RoleBase._counter = 0
         game = Game()
-        game.setup_game(num_villagers=120,num_werewolves=5,num_seers=0)
+        game.setup_game(num_villagers=10,num_werewolves=3,num_seers=0)
         game.play_game()
         if game.winner == "Werewolves":
             w += 1
