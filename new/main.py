@@ -86,7 +86,7 @@ class Game:
         poisonedPlayers = set()
         for player in self.players:
             if isinstance(player, witch_strategies.RandomStrategy):
-                poisonedP = player.decideSaveOrPoison(victim)
+                poisonedP = player.decideSaveOrPoison(victim.id)
                 poisonedPlayers.add(poisonedP)
                 if poisonedP == victim:
                     logging.info(f"{player} saved: the victim {victim}")
@@ -101,16 +101,6 @@ class Game:
         for player in self.players:
             player.reactToClaims(claims)
 
-        # For testing of seer/witch mechanism
-        # if len(self.players) == 12:
-        #     testClaimWitch = Claim(self.players)
-        #     testClaimWitch.make_claim(10, "witch")
-        #     testClaimWitch.make_claim(1, "villager")
-        #     testClaimSeer = Claim(self.players)
-        #     testClaimSeer.make_claim(11, "seer")
-        #     testClaimSeer.make_claim(10, "witch")
-        #     for player in self.players:
-        #         player.reactToClaims([Claim(self.players)])
 
     def voting_phase(self):
         votes = {'skip': 0}
@@ -152,7 +142,6 @@ class Game:
 
             self.players.remove(votedOutPlayer)
             
-            
             for player in self.players:
                 #player.players = list(map(lambda x: x.id, self.players))
                 player.players.remove(votedOutPlayer.id)  # Remove victim from other players' views"""
@@ -188,7 +177,16 @@ class Game:
                     player.reactToDeath(victim_last_words)
                     player.players.remove(victim.id)  # Remove victim from other players' views
             
-            # TODO: Remove poisoned players from game
+            if poisonedPlayers is not None:
+                for player in poisonedPlayers:
+                    if player in self.players:
+                        logging.info(f"{player} was poisoned.")
+                        last_words = player.lastWord()
+                        logging.info(f"Last Words -> {player} claims: {last_words}")
+                        self.players.remove(player)
+                        for p in self.players:
+                            p.reactToDeath(last_words)
+                            p.players.remove(player.id)
 
             self.checkGameOver()
             if not self.gameRunning:
@@ -227,7 +225,7 @@ if __name__ == "__main__":
     w = 0
     v = 0
     gameRunning = True
-    i = 1
+    i = 100
     for _ in tqdm.tqdm(range(i)):
         game = Game()
         game.setup_game(n_vil=9, n_wer=1, n_see=1, n_wit=1)
